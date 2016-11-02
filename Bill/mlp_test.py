@@ -37,9 +37,9 @@ class MLP(object):
         
     def costFunctionPrime(self, trainX, labels):
         predictions = np.asarray(self.yHat)
-        activations = np.asarray(self.activations[0])
- 
         delta3 = np.multiply(-(labels-predictions), sigmoidPrime(np.asarray(self.z[-1])))
+        
+        activations = np.asarray(self.activations[0])
         dJdW2 = np.dot(activations.T, delta3)
         
         delta2 = np.dot(delta3, self.weights[1])*sigmoidPrime(np.asarray(self.z[-2]))
@@ -47,34 +47,30 @@ class MLP(object):
         
         return dJdW1, dJdW2
         
-        
-                
-    def training(self, trainX, labels, stepSize):
-        for i in range(1000):
+    def training(self, trainX, labels, test_x, test_y, stepSize):
+        for i in range(2000):
             del self.yHat[:]
             for j in range(len(self.weights)):
                 del self.z[j][:]
                 del self.activations[j][:]
-            print(i,'th round')
+            print('round', i)
+            #print(self.weights[0][:20])
             for item in trainX:
                 self.yHat.append(self.feedforward(item))
             
-            for item in self.yHat:
-                for i in range(len(item)):
-                    item[i] = 
+            #for item in self.yHat:
+                #for i in range(len(item)):
 
             cost = 0.5*sum((labels-np.asarray(self.yHat))**2)
-            print('cost:', cost)
+            #print('cost:', cost)
             dJdW1, dJdW2 = self.costFunctionPrime(trainX, labels)
             self.weights[0] = self.weights[0] - stepSize*dJdW1.T
             self.weights[1] = self.weights[1] - stepSize*dJdW2.T
-         evaluate(test_x, test_y)
+            print('accuracy: ', self.evaluate(test_x, test_y), len(test_x) )
 
-     def evaluate(self, test_x, test_y):
-        test_results = [(np.argmax(self.feedforward(x)), y)
-                        for (x, y) in test_data]
+    def evaluate(self, test_x, test_y):
+        test_results = [(np.argmax(self.feedforward(x)), np.argmax(y)) for x, y in zip(test_x, test_y)]
         return sum(int(x == y) for (x, y) in test_results)
-        #dgafd
      
 """
 def normalize(data):
@@ -164,31 +160,48 @@ def read(dataset = "training"):
     return x, y
 
 train_x, train_y = read(dataset = "training")
-test_x, test_y = read(dataset = "testing")
 train_x = [item.tolist() for item in train_x]
 
 labelMap = np.matrix(np.identity(10), copy=False)
 labelMap = labelMap.tolist()
-print(labelMap)
-labels = []
 
-print(len(train_y))
+labels_train = []
 for i in train_y:
-    labels.append(labelMap[i])
+    labels_train.append(labelMap[i])
+del train_y[:]
 
-
-fullData = []
+fullTrainX = []
 for item in train_x:
     tempRow = []
     for row in item:
         for i in range(len(row)):
             row[i] = row[i]/255.0
         tempRow.extend(row)
-    fullData.append(tempRow)
-    
-fullData = np.asarray(fullData)
-print(fullData[1])
+    fullTrainX.append(tempRow)
+del train_x[:]
+fullTrainX = np.asarray(fullTrainX)
+
+test_x, test_y = read(dataset = "testing")
+test_x = [item.tolist() for item in test_x]
+
+labels_test = []
+for i in test_y:
+    labels_test.append(labelMap[i])
+del test_y[:]
+
+fullTestX = []
+for item in test_x:
+    tempRow = []
+    for row in item:
+        for i in range(len(row)):
+            row[i] = row[i]/255.0
+        tempRow.extend(row)
+    fullTestX.append(tempRow)
+del test_x[:]
+fullTestX = np.asarray(fullTestX)
+
+#print(fullData[1])
 
 mlp = MLP([784,50,10])
-mlp.training(fullData, labels, 0.001)
+mlp.training(fullTrainX, labels_train, fullTestX, labels_test, 0.0002)
 
