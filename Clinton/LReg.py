@@ -509,7 +509,6 @@ def predict():
         outputs=classifier.y_pred)
 
     # We can test it on some examples from test test
-    dataset='mnist.pkl.gz'
     datasets = load_data()
     test_set_x, test_set_y = datasets[2]
     test_set_x = test_set_x.get_value()
