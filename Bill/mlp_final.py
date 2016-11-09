@@ -5,7 +5,10 @@
 
 import numpy as np
 import csv, pickle, random
+import matplotlib
+matplotlib.use('Agg')
 from matplotlib import pyplot as plt
+
 
 #helper functions for calculating sigmoid and sigmoid prime
 def sigmoid(z):
@@ -70,6 +73,7 @@ class MLP(object):
         cache1 = cache2 = cache3 = None
         allTrainLoss = []
         allTestLoss = []
+        
         for i in range(epochs):
             random.shuffle(combined)
             miniBatches = [combined[k:k+batchsize] for k in range(0, len(combined), batchsize)]
@@ -112,8 +116,6 @@ class MLP(object):
                 #self.weights[0] = self.weights[0] - (momentum*self.weights[0] + stepSize*dJdW1.T)
                 #self.weights[1] = self.weights[1] - (momentum*self.weights[1] + stepSize*dJdW2.T)
                 #self.weights[2] = self.weights[2] - (momentum*self.weights[2] + stepSize*dJdW3.T)
-
-            print(self.weights[2][-1])
             
             trainingLoss = 1 - self.evaluate(train_x, train_y)/len(train_x)
             testLoss = 1 - self.evaluate(test_x, test_y)/len(test_x)
@@ -128,24 +130,25 @@ class MLP(object):
                 lowestLoss = testLoss
                 trainingIter = i
 
-        self.graphIterationLoss()
-        return highestAccuracy, trainingIter
+        self.graphIterationLoss(allTrainLoss, allTestLoss)
+        return lowestLoss, trainingIter
 
     #method for predicting label on the validation cases
     def evaluate(self, test_x, test_y):
         test_results = [(np.argmax(self.feedforward(x)), np.argmax(y)) for x, y in zip(test_x, test_y)]
         return sum(int(x == y) for (x, y) in test_results)
 
-    def graphIterationLoss(allTrainLoss, allTestLoss):
+    def graphIterationLoss(self, allTrainLoss, allTestLoss):
         plt.figure(figsize=(8, 6), dpi=80)
         plt.subplot(1, 1, 1)
         plt.ylabel('Loss')
         plt.xlabel('Iteration')
-        plt.plot(allTrainLoss)
-        plt.plot(allTestLoss)
+        trainLoss, = plt.plot(allTrainLoss, label='Training Loss')
+        testLoss, = plt.plot(allTestLoss, label='Testing Loss')
+        plt.legend(handles=[trainLoss, testLoss])
         plt.show()
         
-
+"""
 import numpy
 from scipy import signal
 from scipy.stats import threshold
@@ -201,8 +204,87 @@ for k in range(0, len(finalData), int(len(finalData)/kFold)):
 
     mlp = MLP([3600,30,30,19])
 
-    accuracy, iteration = mlp.training(fullTrainX, labels_train, fullTestX, labels_test, stepSize=0.001, epochs=10, batchsize=100)
+    accuracy, iteration = mlp.training(fullTrainX, labels_train, fullTestX, labels_test, stepSize=0.01, epochs=50, batchsize=50)
     outFile = open('mlp_' + str(accuracy) + '_' + str(iteration) + '.p', 'wb')
     pickle.dump(mlp, outFile)
     outFile.close()
-    
+"""
+import os
+import struct
+import numpy as np
+
+def read(dataset = "training"):
+    x = []
+    y = []
+    if dataset is "training":
+        fname_img = 'train-images.idx3-ubyte'
+        fname_lbl = 'train-labels.idx1-ubyte'
+    elif dataset is "testing":
+        fname_img = 't10k-images.idx3-ubyte'
+        fname_lbl = 't10k-labels.idx1-ubyte'
+
+    # Load everything in some numpy arrays
+    with open(fname_lbl, 'rb') as flbl:
+        magic, num = struct.unpack(">II", flbl.read(8))
+        lbl = np.fromfile(flbl, dtype=np.int8)
+
+    with open(fname_img, 'rb') as fimg:
+        magic, num, rows, cols = struct.unpack(">IIII", fimg.read(16))
+        img = np.fromfile(fimg, dtype=np.uint8).reshape(len(lbl), rows, cols)
+
+    get_img = lambda idx: (lbl[idx], img[idx])
+
+    # Create an iterator which returns each image in turn
+    for i in range(len(lbl)):
+        pair = get_img(i)
+        x.append(pair[1])
+        y.append(pair[0])
+
+    return x, y
+
+train_x, train_y = read(dataset = "training")
+train_x = [item.tolist() for item in train_x]
+
+labelMap = np.matrix(np.identity(10), copy=False)
+labelMap = labelMap.tolist()
+
+labels_train = []
+for i in train_y:
+    labels_train.append(labelMap[i])
+del train_y[:]
+
+fullTrainX = []
+for item in train_x:
+    tempRow = []
+    for row in item:
+        for i in range(len(row)):
+            row[i] = row[i]/255.0
+        tempRow.extend(row)
+    fullTrainX.append(tempRow)
+del train_x[:]
+#fullTrainX = np.asarray(fullTrainX)
+
+test_x, test_y = read(dataset = "testing")
+test_x = [item.tolist() for item in test_x]
+
+labels_test = []
+for i in test_y:
+    labels_test.append(labelMap[i])
+del test_y[:]
+
+fullTestX = []
+for item in test_x:
+    tempRow = []
+    for row in item:
+        for i in range(len(row)):
+            row[i] = row[i]/255.0
+        tempRow.extend(row)
+    fullTestX.append(tempRow)
+del test_x[:]
+fullTestX = np.asarray(fullTestX)
+
+#print(fullData[1])
+
+mlp = MLP([784,30,30,10])
+
+accuracy, iteration = mlp.training(fullTrainX, labels_train, fullTestX, labels_test, stepSize=0.01, epochs=50, batchsize=50)
