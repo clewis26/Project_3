@@ -71,8 +71,8 @@ class MLP(object):
         decay_rate = 0.999
         combined = list(zip(train_x, train_y))
         cache1 = cache2 = cache3 = None
-        allTrainLoss = []
-        allTestLoss = []
+        #allTrainLoss = []
+        #allTestLoss = []
         
         for i in range(epochs):
             random.shuffle(combined)
@@ -117,27 +117,22 @@ class MLP(object):
                 #self.weights[1] = self.weights[1] - (momentum*self.weights[1] + stepSize*dJdW2.T)
                 #self.weights[2] = self.weights[2] - (momentum*self.weights[2] + stepSize*dJdW3.T)
             
-            trainingLoss = 1 - self.evaluate(train_x, train_y)/len(train_x)
-            testLoss = 1 - self.evaluate(test_x, test_y)/len(test_x)
+            trainingAccuracy = self.evaluate(train_x, train_y)/len(train_x)
+            testAccuracy = self.evaluate(test_x, test_y)/len(test_x)
             
-            allTrainLoss.append(trainingLoss)
-            allTestLoss.append(testLoss)
+            #allTrainLoss.append(trainingLoss)
+            #allTestLoss.append(testLoss)
 
-            print('training loss', trainingLoss)
-            print('testing loss: ', testLoss)
+            print('training accuracy: ', trainingAccuracy)
+            print('testing accuracy: ', testAccuracy)
 
-            if testLoss < lowestLoss:
-                lowestLoss = testLoss
-                trainingIter = i
-
-        self.graphIterationLoss(allTrainLoss, allTestLoss)
-        return lowestLoss, trainingIter
+        #self.graphIterationLoss(allTrainLoss, allTestLoss)
 
     #method for predicting label on the validation cases
     def evaluate(self, test_x, test_y):
         test_results = [(np.argmax(self.feedforward(x)), np.argmax(y)) for x, y in zip(test_x, test_y)]
         return sum(int(x == y) for (x, y) in test_results)
-
+"""
     def graphIterationLoss(self, allTrainLoss, allTestLoss):
         plt.figure(figsize=(8, 6), dpi=80)
         plt.subplot(1, 1, 1)
@@ -204,10 +199,11 @@ for k in range(0, len(finalData), int(len(finalData)/kFold)):
 
     mlp = MLP([3600,30,30,19])
 
-    accuracy, iteration = mlp.training(fullTrainX, labels_train, fullTestX, labels_test, stepSize=0.01, epochs=50, batchsize=50)
+    mlp.training(fullTrainX, labels_train, fullTestX, labels_test, stepSize=0.01, epochs=50, batchsize=50)
     outFile = open('mlp_' + str(accuracy) + '_' + str(iteration) + '.p', 'wb')
     pickle.dump(mlp, outFile)
     outFile.close()
+
 """
 import os
 import struct
@@ -287,4 +283,5 @@ fullTestX = np.asarray(fullTestX)
 
 mlp = MLP([784,30,30,10])
 
-accuracy, iteration = mlp.training(fullTrainX, labels_train, fullTestX, labels_test, stepSize=0.01, epochs=50, batchsize=50)
+mlp.training(fullTrainX, labels_train, fullTestX, labels_test, stepSize=0.01, epochs=50, batchsize=50)
+"""
